@@ -1,15 +1,18 @@
 # Domain tag → one language stub package
 #
-#   git tag board-v1/0.0.1 && git push origin board-v1/0.0.1
+#   git tag board-v1/1.0.0 && git push origin board-v1/1.0.0
 #
-# Java:  com.oinkvalley.protos:board-v1:0.0.1
-# Python: Release asset oinkvalley_protos_board_v1-…
+# Java:  com.oinkvalley.protos:board-v1:1.0.0
+# Python: Release asset
+#
+# Note: tag names contain `/`. GitHub `*` does not match `/`, so use `**`
+# and gate with job `if` (plain tags like 0.0.1 are skipped).
 name: publish
 
 on:
   push:
     tags:
-      - "*-v*/[0-9]*"
+      - "**"
 
 permissions:
   contents: write
@@ -17,6 +20,8 @@ permissions:
 
 jobs:
   parse:
+    # board-v1/1.0.0 OK · 0.0.1 skip
+    if: contains(github.ref_name, '-v') && contains(github.ref_name, '/')
     runs-on: ubuntu-latest
     outputs:
       artifact: ${{ steps.p.outputs.artifact }}

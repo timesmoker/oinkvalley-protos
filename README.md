@@ -40,6 +40,9 @@ git tag bubble-pal-engine-v1/0.0.2 && git push origin bubble-pal-engine-v1/0.0.2
 
 그 태그 → **그 도메인만** 컴파일·publish. 다른 모듈 안 건드림.
 
+> Actions는 태그가 가리키는 커밋의 workflow를 씀. 필터/`publish.yml` 고치면
+> 태그 다시 푸시(또는 새 커밋으로 태그 이동) 해야 재실행됨.
+
 Python: 같은 태그의 GitHub Release에 wheel 첨부  
 (`oinkvalley-protos-board-v1==0.0.1` 등).
 
