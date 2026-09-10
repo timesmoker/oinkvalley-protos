@@ -1,22 +1,45 @@
-# Git tag → language stub packages
+# Domain tag → one language stub package
 #
-#   git tag 0.0.1 && git push origin 0.0.1
+#   git tag board-v1/0.0.1 && git push origin board-v1/0.0.1
 #
-# Java  → GitHub Packages (Maven): com.oinkvalley:oinkvalley-protos:TAG
-# Python → GitHub Release assets (wheel/sdist) — GH Packages에 PyPI 레지스트리 없음
+# Java:  com.oinkvalley.protos:board-v1:0.0.1
+# Python: Release asset oinkvalley_protos_board_v1-…
 name: publish
 
 on:
   push:
     tags:
-      - "*"
+      - "*-v*/[0-9]*"
 
 permissions:
   contents: write
   packages: write
 
 jobs:
+  parse:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.p.outputs.artifact }}
+      version: ${{ steps.p.outputs.version }}
+      gradle_project: ${{ steps.p.outputs.gradle_project }}
+      idl_dir: ${{ steps.p.outputs.idl_dir }}
+    steps:
+      - id: p
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          ARTIFACT="${TAG%%/*}"
+          VERSION="${TAG#*/}"
+          # board-v1 → board ; bubble-pal-api-v1 → bubble_pal_api
+          BASE="${ARTIFACT%-v1}"
+          IDL_DIR="${BASE//-/_}"
+          echo "artifact=${ARTIFACT}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "gradle_project=${IDL_DIR}" >> "$GITHUB_OUTPUT"
+          echo "idl_dir=${IDL_DIR}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG} artifact=${ARTIFACT} version=${VERSION} project=${IDL_DIR}"
+
   java:
+    needs: parse
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,17 +49,18 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Publish Java stubs
+      - name: Publish Java module
         working-directory: java
         env:
-          VERSION: ${{ github.ref_name }}
+          VERSION: ${{ needs.parse.outputs.version }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon publish
+          ./gradlew --no-daemon ":${{ needs.parse.outputs.gradle_project }}:publish"
 
   python:
+    needs: parse
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,12 +71,11 @@ jobs:
 
       - name: Generate + build wheel
         env:
-          VERSION: ${{ github.ref_name }}
+          VERSION: ${{ needs.parse.outputs.version }}
         run: |
           python -m pip install -U pip build "grpcio-tools>=1.68"
-          sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" python/pyproject.toml
           chmod +x python/generate.sh
-          ./python/generate.sh
+          ./python/generate.sh "${{ needs.parse.outputs.idl_dir }}"
           python -m build python
 
       - name: Attach wheel to GitHub Release
@@ -60,5 +83,6 @@ jobs:
         with:
           files: python/dist/*
           generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,3 +1,4 @@
-/build/
-/.gradle/
-/out/
+**/build/
+.gradle/
+out/
+**/src/main/proto/

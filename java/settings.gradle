@@ -1,1 +1,9 @@
 rootProject.name = 'oinkvalley-protos'
+
+include(
+	'board',
+	'profile',
+	'bubble_pal_api',
+	'bubble_pal_engine',
+	'content_fetcher',
+)

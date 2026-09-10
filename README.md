@@ -1,76 +1,81 @@
 # oinkvalley-protos
 
-내부 API **IDL** (`.proto`) + **언어별 stub 패키지** 배포.
+내부 API **IDL** + **도메인별** 언어 stub 패키지.
 
 원격: https://github.com/timesmoker/oinkvalley-protos.git (HTTPS)
 
 ## 레이아웃
 
 ```
-board/v1/…                 ← IDL (소스 오브 트루스)
+board/v1/…                 ← IDL
 profile/v1/…
-bubble_pal_*/v1/…
+bubble_pal_api/v1/…
+bubble_pal_engine/v1/…
 content_fetcher/v1/…
-java/                      ← stub 생성 → Maven (GitHub Packages)
-python/                    ← stub 생성 → Release wheel
-.github/workflows/publish.yml
+java/<domain>/             ← 도메인별 Gradle 모듈
+python/generate.sh <domain>
 ```
 
-서비스 레포에 `.proto` 복붙 금지. **패키지 의존.**
+## 태그 (도메인 필수)
 
-## 배포
+```
+<artifact>/<semver>
+```
+
+예:
 
 ```bash
-git tag 0.0.1
-git push origin 0.0.1
+git tag board-v1/0.0.1 && git push origin board-v1/0.0.1
+git tag profile-v1/0.1.0 && git push origin profile-v1/0.1.0
+git tag bubble-pal-engine-v1/0.0.2 && git push origin bubble-pal-engine-v1/0.0.2
 ```
 
-| 언어 | 어디에 | 좌표 |
-|------|--------|------|
-| **Java** | GitHub Packages (Maven) | `com.oinkvalley:oinkvalley-protos:0.0.1` |
-| **Python** | GitHub **Release** asset | `oinkvalley-protos-0.0.1-*.whl` |
+| 태그 | Java 좌표 |
+|------|-----------|
+| `board-v1/0.0.1` | `com.oinkvalley.protos:board-v1:0.0.1` |
+| `profile-v1/0.1.0` | `com.oinkvalley.protos:profile-v1:0.1.0` |
+| `bubble-pal-api-v1/…` | `…:bubble-pal-api-v1:…` |
+| `bubble-pal-engine-v1/…` | `…:bubble-pal-engine-v1:…` |
+| `content-fetcher-v1/…` | `…:content-fetcher-v1:…` |
 
-> GitHub Packages에 공식 PyPI 레지스트리 없음 → Python은 Release wheel.
+그 태그 → **그 도메인만** 컴파일·publish. 다른 모듈 안 건드림.
+
+Python: 같은 태그의 GitHub Release에 wheel 첨부  
+(`oinkvalley-protos-board-v1==0.0.1` 등).
 
 ## 소비 — Java
 
-```gradle
-repositories {
-	mavenCentral()
-	maven {
-		url = uri('https://maven.pkg.github.com/timesmoker/oinkvalley-protos')
-		credentials {
-			username = System.getenv('GITHUB_ACTOR') ?: ''
-			password = System.getenv('GITHUB_TOKEN') ?: ''
-		}
-	}
-}
+필요한 도메인만:
 
+```gradle
 dependencies {
-	implementation 'com.oinkvalley:oinkvalley-protos:0.0.1'
+	implementation 'com.oinkvalley.protos:board-v1:0.0.1'
+	implementation 'com.oinkvalley.protos:profile-v1:0.0.1'
 }
 ```
 
-로컬 토큰: `GITHUB_TOKEN` (packages read).  
-로컬 publish 테스트: `cd java && VERSION=0.0.1-SNAPSHOT ./gradlew publishToMavenLocal`
+로컬:
+
+```bash
+cd java
+VERSION=0.0.1 ./gradlew :board:publishToMavenLocal
+VERSION=0.0.1 ./gradlew :profile:publishToMavenLocal
+```
 
 ## 소비 — Python
 
-Release에서 wheel 받아 설치:
-
 ```bash
-# 예: 0.0.1 Release asset
 pip install \
-  "https://github.com/timesmoker/oinkvalley-protos/releases/download/0.0.1/oinkvalley_protos-0.0.1-py3-none-any.whl"
+  "https://github.com/timesmoker/oinkvalley-protos/releases/download/board-v1/0.0.1/oinkvalley_protos_board_v1-0.0.1-py3-none-any.whl"
 ```
-
-또는 CI에서 `gh release download`.
 
 ## 로컬 생성
 
 ```bash
-cd java && ./gradlew build
-
-pip install 'grpcio-tools>=1.68'
-./python/generate.sh
+cd java && ./gradlew :board:generateProto
+./python/generate.sh board
 ```
+
+## v1 / 메이저
+
+IDL 경로 `v1` 유지. 깨는 변경 시 폴더 `v2` + artifact `board-v2` (나중에).
