@@ -1,0 +1,8 @@
+/board/
+/profile/
+/bubble_pal_api/
+/bubble_pal_engine/
+/content_fetcher/
+/dist/
+/*.egg-info/
+/__pycache__/
