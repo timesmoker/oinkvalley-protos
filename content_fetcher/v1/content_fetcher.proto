@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package oinkvalley.content_fetcher.v1;
+
+option java_multiple_files = true;
+option java_package = "com.oinkvalley.content_fetcher.v1";
+
+import "google/protobuf/empty.proto";
+
+// = POST /fetch, /pick
+service ContentFetcherService {
+  rpc Fetch(FetchRequest) returns (FetchResponse);
+  rpc Pick(google.protobuf.Empty) returns (PickedContentResponse); // body 없음
+}
+
+message FetchRequest {
+  string url = 1;
+}
+
+message FetchResponse {
+  string url = 1;
+  string final_url = 2; // 리다이렉트 후
+  string title = 3;
+  string text = 4;
+}
+
+message PickedContentResponse {
+  string type = 1;
+  string topic = 2;
+  string title = 3;
+  string url = 4;
+  string summary = 5; // 본문
+  string published_at = 6;
+}

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package oinkvalley.profile.v1;
+
+option java_multiple_files = true;
+option java_package = "com.oinkvalley.profile.v1";
+
+// = /internal/profiles*
+service ProfileInternalService {
+  // POST /internal/profiles → 201 void
+  rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
+  // GET /internal/profiles/exists?nickname=
+  rpc ExistsNickname(ExistsNicknameRequest) returns (ExistsNicknameResponse);
+}
+
+message CreateProfileRequest {
+  int64 user_id = 1;
+  string nickname = 2; // max 64
+}
+
+// HTTP void 자리
+message CreateProfileResponse {}
+
+message ExistsNicknameRequest {
+  string nickname = 1;
+}
+
+message ExistsNicknameResponse {
+  bool exists = 1;
+}

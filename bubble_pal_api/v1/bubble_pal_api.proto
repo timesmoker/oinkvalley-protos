@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package oinkvalley.bubble_pal_api.v1;
+
+option java_multiple_files = true;
+option java_package = "com.oinkvalley.bubble_pal_api.v1";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+// = /internal/cron/* , /internal/post-from-link
+service BubblePalInternalService {
+  // POST /internal/cron/daily-post
+  rpc CronDailyPost(google.protobuf.Empty) returns (InternalPublishResponse);
+  // POST /internal/cron/daily-post/force
+  rpc CronDailyPostForce(DailyPostForceRequest) returns (InternalPublishResponse);
+  // POST /internal/post-from-link
+  rpc PostFromLink(PostFromLinkRequest) returns (InternalPublishResponse);
+}
+
+message DailyPostForceRequest {
+  // 아래 전부 env 기본값보다 우선
+  optional string character_id = 1;
+  optional int64 board_id = 2;
+  optional int64 author_user_id = 3;
+  optional bool publish = 4; // 기본 true, false면 publish 스킵
+}
+
+message PostFromLinkRequest {
+  string source_url = 1;
+  optional string character_id = 2;
+  optional int64 board_id = 3;
+  optional bool publish = 4; // 기본 true, false면 생성만
+}
+
+message InternalPublishResponse {
+  // PostApiResponse — 중첩 커서 당분간 Struct
+  google.protobuf.Struct generation = 1;
+  PublishResult publish = 2;
+}
+
+message PublishResult {
+  string status = 1; // published | skipped | failed
+  optional int64 board_id = 2;
+  optional int64 post_id = 3;
+  optional string message = 4;
+}

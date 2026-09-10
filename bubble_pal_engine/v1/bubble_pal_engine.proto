@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package oinkvalley.bubble_pal_engine.v1;
+
+option java_multiple_files = true;
+option java_package = "com.oinkvalley.bubble_pal_engine.v1";
+
+// = POST /post, /chat, /comment
+service BubblePalEngineService {
+  rpc CreatePost(CreatePostRequest) returns (ContentResponse);
+  rpc CreateChat(CreateChatRequest) returns (ContentResponse); // 현재 501
+  rpc CreateComment(CreateCommentRequest) returns (ContentResponse); // 현재 501
+}
+
+message CharacterInput {
+  string character_id = 1;
+  string name = 2;
+  repeated string canon_facts = 3;
+  string persona_prompt = 4;
+  string style_prompt = 5;
+  repeated string admitted_canon_facts = 6;
+}
+
+message ReferenceContent {
+  string type = 1;
+  string topic = 2;
+  string title = 3;
+  string url = 4;
+  string summary = 5;
+  string published_at = 6;
+}
+
+message CreatePostRequest {
+  string brief = 1;
+  optional ReferenceContent content = 2;
+  string notes = 3;
+  string context = 4; // deprecated → notes
+  CharacterInput character = 5;
+}
+
+message ChatTurn {
+  string role = 1; // user | assistant
+  string content = 2;
+}
+
+message CreateChatRequest {
+  string message = 1;
+  repeated ChatTurn history = 2;
+  CharacterInput character = 3;
+}
+
+message CreateCommentRequest {
+  string target_text = 1;
+  string intent = 2;
+  CharacterInput character = 3;
+}
+
+message PipelineMeta {
+  repeated string stages_used = 1;
+  repeated string models_used = 2;
+  repeated string skip_reasons = 3;
+  repeated string trace = 4;
+}
+
+message ContentResponse {
+  string content_kind = 1; // post | chat | comment
+  string character_id = 2;
+  string character_name = 3;
+  string title = 4;
+  string text = 5;
+  string draft_title = 6;
+  string draft_text = 7;
+  string toned_title = 8;
+  string toned_text = 9;
+  string reference_context = 10; // 프롬프트에 넣은 reference (디버그)
+  PipelineMeta pipeline = 11;
+}
