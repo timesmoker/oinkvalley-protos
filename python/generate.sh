@@ -2,6 +2,10 @@
 # Usage: ./generate.sh <idl_dir>
 #   ./generate.sh board
 #   ./generate.sh bubble_pal_engine
+#
+# Emits import root oinkvalley_<domain> (avoids clashing with app packages
+# like content_fetcher). Hatch ignore-vcs=true so gitignored stubs still
+# land in the wheel.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PY="$(cd "$(dirname "$0")" && pwd)"
@@ -9,8 +13,9 @@ DOMAIN="${1:?usage: $0 <board|profile|bubble_pal_api|bubble_pal_engine|content_f
 IDL="$ROOT/$DOMAIN"
 [[ -d "$IDL" ]] || { echo "missing IDL dir: $IDL" >&2; exit 1; }
 
-# clear previous generated tree for this domain only
-rm -rf "$PY/$DOMAIN"
+OUT_PKG="oinkvalley_${DOMAIN}"
+
+rm -rf "$PY/$DOMAIN" "$PY/$OUT_PKG"
 
 python3 -m grpc_tools.protoc \
   -I"$ROOT" \
@@ -20,9 +25,18 @@ python3 -m grpc_tools.protoc \
   --pyi_out="$PY" \
   "$IDL"/v1/*.proto
 
-find "$PY/$DOMAIN" -type d -exec touch {}/__init__.py \;
+# content_fetcher/v1 → oinkvalley_content_fetcher/v1
+mkdir -p "$PY/$OUT_PKG"
+mv "$PY/$DOMAIN/v1" "$PY/$OUT_PKG/v1"
+rmdir "$PY/$DOMAIN" 2>/dev/null || rm -rf "$PY/$DOMAIN"
 
-# hatch package metadata for this domain
+# fix grpc stub imports: from content_fetcher.v1 → from oinkvalley_content_fetcher.v1
+while IFS= read -r -d '' f; do
+  sed -i "s/from ${DOMAIN}\\.v1/from ${OUT_PKG}.v1/g" "$f"
+done < <(find "$PY/$OUT_PKG" -name '*_pb2_grpc.py' -print0)
+
+find "$PY/$OUT_PKG" -type d -exec touch {}/__init__.py \;
+
 ART="${DOMAIN//_/-}-v1"
 PKG_NAME="oinkvalley-protos-${ART}"
 VERSION="${VERSION:-0.0.0}"
@@ -42,11 +56,15 @@ dependencies = [
   "protobuf>=5.29",
 ]
 
+[tool.hatch.build]
+# generated tree is gitignored; without this the wheel ships empty metadata only
+ignore-vcs = true
+
 [tool.hatch.build.targets.wheel]
-packages = ["${DOMAIN}"]
+packages = ["${OUT_PKG}"]
 
 [tool.hatch.build.targets.sdist]
-include = ["${DOMAIN}", "README.md"]
+include = ["${OUT_PKG}", "README.md"]
 EOF
 
-echo "generated $DOMAIN → package ${PKG_NAME}==${VERSION}"
+echo "generated ${OUT_PKG} → package ${PKG_NAME}==${VERSION}"

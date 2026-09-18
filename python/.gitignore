@@ -1,3 +1,9 @@
+/oinkvalley_board/
+/oinkvalley_profile/
+/oinkvalley_bubble_pal_api/
+/oinkvalley_bubble_pal_engine/
+/oinkvalley_content_fetcher/
+# legacy layout (pre-namespace rename)
 /board/
 /profile/
 /bubble_pal_api/

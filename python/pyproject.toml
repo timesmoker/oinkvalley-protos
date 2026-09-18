@@ -3,9 +3,9 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "oinkvalley-protos"
-version = "0.0.0"
-description = "Generated gRPC stubs for oinkvalley internal APIs"
+name = "oinkvalley-protos-content-fetcher-v1"
+version = "1.0.1"
+description = "Generated gRPC stubs: content_fetcher"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -13,21 +13,12 @@ dependencies = [
   "protobuf>=5.29",
 ]
 
+[tool.hatch.build]
+# generated tree is gitignored; without this the wheel ships empty metadata only
+ignore-vcs = true
+
 [tool.hatch.build.targets.wheel]
-packages = [
-  "board",
-  "profile",
-  "bubble_pal_api",
-  "bubble_pal_engine",
-  "content_fetcher",
-]
+packages = ["oinkvalley_content_fetcher"]
 
 [tool.hatch.build.targets.sdist]
-include = [
-  "board",
-  "profile",
-  "bubble_pal_api",
-  "bubble_pal_engine",
-  "content_fetcher",
-  "README.md",
-]
+include = ["oinkvalley_content_fetcher", "README.md"]
