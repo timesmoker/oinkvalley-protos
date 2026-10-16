@@ -4,6 +4,8 @@
 #
 # Java:  com.oinkvalley.protos:board-v1:1.0.0
 # Python: Release asset
+# Go:    github.com/timesmoker/oinkvalley-protos/go/board@v1.0.0
+#        (Go 는 소스를 git 태그로 받으므로 생성 코드를 별도 커밋에 넣고 go/board/v1.0.0 태그만 push)
 #
 # Note: tag names contain `/`. GitHub `*` does not match `/`, so use `**`
 # and gate with job `if` (plain tags like 0.0.1 are skipped).
@@ -91,3 +93,35 @@ jobs:
           tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  go:
+    needs: parse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Generate Go module
+        run: |
+          chmod +x go/generate.sh
+          ./go/generate.sh "${{ needs.parse.outputs.idl_dir }}"
+
+      # 태그 커밋(detached) 위에 생성 코드 커밋을 하나 얹고, Go 모듈 태그만 push — 브랜치는 건드리지 않는다.
+      # GITHUB_TOKEN 으로 push 한 태그는 워크플로를 다시 트리거하지 않는다.
+      - name: Tag Go module
+        env:
+          IDL_DIR: ${{ needs.parse.outputs.idl_dir }}
+          VERSION: ${{ needs.parse.outputs.version }}
+        run: |
+          GO_TAG="go/${IDL_DIR}/v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f "go/${IDL_DIR}"
+          git commit -m "go: ${IDL_DIR} v${VERSION} (generated from ${GITHUB_REF_NAME})"
+          git tag "${GO_TAG}"
+          git push origin "refs/tags/${GO_TAG}"
+          echo "published ${GO_TAG}"
+

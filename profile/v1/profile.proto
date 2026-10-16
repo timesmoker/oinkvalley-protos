@@ -11,6 +11,9 @@ service ProfileInternalService {
   rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
   // GET /internal/profiles/exists?nickname=
   rpc ExistsNickname(ExistsNicknameRequest) returns (ExistsNicknameResponse);
+  // GET /profiles?ids= — 내부 서비스용 닉네임 일괄 조회
+  rpc BatchGetProfileNicknames(BatchGetProfileNicknamesRequest)
+      returns (BatchGetProfileNicknamesResponse);
 }
 
 message CreateProfileRequest {
@@ -27,4 +30,17 @@ message ExistsNicknameRequest {
 
 message ExistsNicknameResponse {
   bool exists = 1;
+}
+
+message BatchGetProfileNicknamesRequest {
+  repeated int64 user_ids = 1;
+}
+
+message ProfileNickname {
+  int64 user_id = 1;
+  string nickname = 2;
+}
+
+message BatchGetProfileNicknamesResponse {
+  repeated ProfileNickname profiles = 1;
 }
