@@ -7,9 +7,14 @@ option java_package = "com.oinkvalley.board.v1";
 
 import "google/protobuf/struct.proto";
 
-// = POST /internal/posts
 service BoardInternalService {
+  // = POST /internal/posts
   rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+
+  // 색인용 현재 상태 조회 (search-svc). 응답에 없는 id = 삭제된 글.
+  rpc GetIndexPosts(GetIndexPostsRequest) returns (GetIndexPostsResponse);
+  // 색인용 전체 순회 — id 오름차순 커서 (전체 재색인·야간 대조).
+  rpc ListIndexPosts(ListIndexPostsRequest) returns (ListIndexPostsResponse);
 }
 
 message CreatePostRequest {
@@ -25,4 +30,34 @@ message CreatePostRequest {
 
 message CreatePostResponse {
   int64 post_id = 1;
+}
+
+// 검색 색인 문서 원천. 표시·정렬·대조에 필요한 글 소유 필드만 (본문 제외).
+message IndexPost {
+  int64 id = 1;
+  int64 board_id = 2;
+  int64 user_id = 3;
+  string title = 4;
+  int64 created_at_ms = 5; // epoch millis
+  int64 updated_at_ms = 6; // epoch millis — 대조 시 변경 감지
+  int64 comment_count = 7;
+}
+
+message GetIndexPostsRequest {
+  repeated int64 post_ids = 1; // max 100
+}
+
+message GetIndexPostsResponse {
+  repeated IndexPost posts = 1;
+}
+
+message ListIndexPostsRequest {
+  int64 after_id = 1; // 0 = 처음부터
+  int32 limit = 2;    // 1..500
+}
+
+message ListIndexPostsResponse {
+  repeated IndexPost posts = 1;
+  int64 next_after_id = 2; // 다음 요청의 after_id
+  bool has_more = 3;
 }
