@@ -68,6 +68,23 @@ VERSION=1.0.0 ./gradlew :board:publishToMavenLocal
 VERSION=1.0.0 ./gradlew :profile:publishToMavenLocal
 ```
 
+## 소비 — Go
+
+Go 는 패키지 저장소가 아니라 **git 태그의 소스**를 받는다. 도메인 태그(`board-v1/1.1.0`)를 push 하면
+워크플로가 `go/generate.sh` 로 생성한 코드를 별도 커밋에 넣고 `go/board/v1.1.0` 태그를 만든다 (브랜치에는 생성 코드 없음).
+
+```bash
+# 비공개 저장소 — 프록시 우회 + git 인증 필요
+export GOPRIVATE=github.com/timesmoker/*
+go get github.com/timesmoker/oinkvalley-protos/go/board@v1.1.0
+```
+
+`import boardv1 "github.com/timesmoker/oinkvalley-protos/go/board/boardv1"`
+
+Docker 빌드에서는 토큰을 secret 으로 넘겨 그 RUN 안에서만 git 인증 (예: `search/Dockerfile`).
+
+로컬 생성 확인: `./go/generate.sh board` (도구 버전은 스크립트에 고정, `go/.bin` 에 받음)
+
 ## 소비 — Python
 
 Import root: `oinkvalley_<domain>.v1` (앱 패키지 `content_fetcher` 등과 충돌 방지).
