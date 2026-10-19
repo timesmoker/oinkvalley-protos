@@ -41,6 +41,7 @@ message IndexPost {
   int64 created_at_ms = 5; // epoch millis
   int64 updated_at_ms = 6; // epoch millis — 대조 시 변경 감지
   int64 comment_count = 7;
+  bool ai_generated = 8;  // AI 가 쓴 글 (board 내부 gRPC CreatePost 경로) — 전체 게시글 "AI 글 숨기기" 필터
 }
 
 message GetIndexPostsRequest {
